@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Alat Crop Teks - eJawi2u</title>
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Cropper.js CSS & JS via Cloudflare CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #10b981;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      padding: 12px 16px;
+      background: var(--card-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #image-container {
+      flex: 1;
+      position: relative;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #image-to-crop {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+    }
+    #empty-state {
+      position: absolute;
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+    }
+    #empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 12px;
+      opacity: 0.6;
+    }
+    footer {
+      padding: 14px 16px;
+      background: var(--card-bg);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 10;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+    }
+    .mode-selector {
+      display: flex;
+      gap: 8px;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: var(--text-muted);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+    button.main-action {
+      flex: 2;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    button.main-action:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.secondary-action {
+      flex: 1;
+      background: #334155;
+      color: var(--text);
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>✂️ Pilih Kotak Teks</h1>
+    <label for="file-input" style="font-size: 13px; color: #38bdf8; cursor: pointer; text-decoration: underline;">
+      Tukar Gambar
+    </label>
+    <input type="file" id="file-input" accept="image/*">
+  </header>
+
+  <div id="image-container">
+    <div id="empty-state">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+      </svg>
+      <div>Memuatkan gambar...<br><small>Sila pilih gambar jika tidak muncul.</small></div>
+    </div>
+    <img id="image-to-crop" src="" alt="Gambar untuk di-crop">
+  </div>
+
+  <footer>
+    <div class="mode-selector">
+      <button type="button" class="mode-btn active" id="btn-mode-rumi" onclick="setMode('rumi_jawi')">
+        🔤 Rumi ➡️ Jawi
+      </button>
+      <button type="button" class="mode-btn" id="btn-mode-jawi" onclick="setMode('jawi_rumi')">
+        📜 Jawi ➡️ Rumi
+      </button>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="secondary-action" onclick="rotateImage()">🔄 Pusing</button>
+      <button type="button" class="main-action" id="btn-submit" onclick="submitCrop()">
+        ⚡ Terjemah Bahagian Ini
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.expand();
+      tg.enableClosingConfirmation();
+    }
+
+    let cropper = null;
+    let selectedMode = 'rumi_jawi';
+    const imageEl = document.getElementById('image-to-crop');
+    const emptyState = document.getElementById('empty-state');
+    const fileInput = document.getElementById('file-input');
+
+    function setMode(mode) {
+      selectedMode = mode;
+      document.getElementById('btn-mode-rumi').classList.toggle('active', mode === 'rumi_jawi');
+      document.getElementById('btn-mode-jawi').classList.toggle('active', mode === 'jawi_rumi');
+    }
+
+    function initCropper(src) {
+      if (cropper) {
+        cropper.destroy();
+      }
+      emptyState.style.display = 'none';
+      imageEl.style.display = 'block';
+      imageEl.src = src;
+
+      cropper = new Cropper(imageEl, {
+        viewMode: 1,
+        autoCropArea: 0.8,
+        responsive: true,
+        movable: true,
+        rotatable: true,
+        scalable: true,
+        zoomable: true,
+        touchDragZoom: true,
+        mouseWheelZoom: true,
+      });
+    }
+
+    function rotateImage() {
+      if (cropper) {
+        cropper.rotate(90);
+      }
+    }
+
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          initCropper(evt.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Semak jika ada imej yang dipassing via URL parameter ?img=...
+    const urlParams = new URLSearchParams(window.location.search);
+    const imgParam = urlParams.get('img');
+    const modeParam = urlParams.get('mode');
+    if (modeParam) {
+      setMode(modeParam);
+    }
+    if (imgParam) {
+      initCropper(decodeURIComponent(imgParam));
+    }
+
+    function submitCrop() {
+      if (!cropper) {
+        alert('Sila pilih gambar terlebih dahulu!');
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit');
+      btn.disabled = true;
+      btn.innerText = 'Memproses... ⏳';
+
+      // Dapatkan canvas kawasan crop
+      const canvas = cropper.getCroppedCanvas({
+        maxWidth: 2000,
+        maxHeight: 2000,
+        imageSmoothingQuality: 'high'
+      });
+
+      if (!canvas) {
+        alert('Gagal memotong gambar!');
+        btn.disabled = false;
+        btn.innerText = '⚡ Terjemah Bahagian Ini';
+        return;
+      }
+
+      // Eksport ke JPEG berkualiti tinggi (0.9)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      const base64Data = dataUrl.split(',')[1];
+
+      const payload = {
+        action: 'crop_ocr',
+        mode: selectedMode,
+        image_base64: base64Data
+      };
+
+      if (tg && tg.sendData) {
+        tg.sendData(JSON.stringify(payload));
+        tg.close();
+      } else {
+        alert('Data berjaya dipotong! (Di luar Telegram app)');
+        console.log(payload);
+        btn.disabled = false;
+        btn.innerText = '⚡ Terjemah Bahagian Ini';
+      }
+    }
+  </script>
+</body>
+</html>
