@@ -259,36 +259,35 @@
       btn.disabled = true;
       btn.innerText = 'Memproses... ⏳';
 
-      // Dapatkan canvas kawasan crop
-      const canvas = cropper.getCroppedCanvas({
-        maxWidth: 2000,
-        maxHeight: 2000,
-        imageSmoothingQuality: 'high'
-      });
+      try {
+        const crop = cropper.getData(true);
+        const img = cropper.getImageData();
 
-      if (!canvas) {
-        alert('Gagal memotong gambar!');
-        btn.disabled = false;
-        btn.innerText = '⚡ Terjemah Bahagian Ini';
-        return;
-      }
+        // Hantar koordinat pemotongan yang padat (< 150 bait) agar tidak melebihi had Telegram 4096 bait
+        const payload = {
+          action: 'crop_coords',
+          mode: selectedMode,
+          x: Math.round(crop.x),
+          y: Math.round(crop.y),
+          w: Math.round(crop.width),
+          h: Math.round(crop.height),
+          img_w: Math.round(img.naturalWidth),
+          img_h: Math.round(img.naturalHeight)
+        };
 
-      // Eksport ke JPEG berkualiti tinggi (0.9)
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      const base64Data = dataUrl.split(',')[1];
+        const jsonStr = JSON.stringify(payload);
 
-      const payload = {
-        action: 'crop_ocr',
-        mode: selectedMode,
-        image_base64: base64Data
-      };
-
-      if (tg && tg.sendData) {
-        tg.sendData(JSON.stringify(payload));
-        tg.close();
-      } else {
-        alert('Data berjaya dipotong! (Di luar Telegram app)');
-        console.log(payload);
+        if (tg && tg.sendData) {
+          tg.sendData(jsonStr);
+          tg.close();
+        } else {
+          alert('Data pemotongan sedia dihantar!');
+          console.log(payload);
+          btn.disabled = false;
+          btn.innerText = '⚡ Terjemah Bahagian Ini';
+        }
+      } catch (err) {
+        alert('Ralat: ' + err.message);
         btn.disabled = false;
         btn.innerText = '⚡ Terjemah Bahagian Ini';
       }
