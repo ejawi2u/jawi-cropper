@@ -153,14 +153,19 @@
     <input type="file" id="file-input" accept="image/*">
   </header>
 
-  <div id="image-container">
-    <div id="empty-state">
+  <div id="image-container" onclick="openPickerIfEmpty()">
+    <div id="empty-state" style="cursor: pointer;">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
       </svg>
-      <div>Memuatkan gambar...<br><small>Sila pilih gambar jika tidak muncul.</small></div>
+      <div style="font-size: 16px; font-weight: 600; color: #38bdf8; margin-bottom: 6px;">
+        📁 Ketuk Sini Untuk Pilih Gambar
+      </div>
+      <div style="font-size: 13px; color: #94a3b8;">
+        Pilih gambar yang sama dari telefon anda untuk melaraskan kotak teks
+      </div>
     </div>
-    <img id="image-to-crop" src="" alt="Gambar untuk di-crop">
+    <img id="image-to-crop" src="" alt="Gambar untuk di-crop" style="display: none;">
   </div>
 
   <footer>
@@ -227,6 +232,12 @@
       }
     }
 
+    function openPickerIfEmpty() {
+      if (!cropper) {
+        fileInput.click();
+      }
+    }
+
     fileInput.addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
@@ -257,7 +268,7 @@
 
       const btn = document.getElementById('btn-submit');
       btn.disabled = true;
-      btn.innerText = 'Memproses... ⏳';
+      btn.innerText = 'Menghantar ke Bot... ⏳';
 
       try {
         const crop = cropper.getData(true);
@@ -277,12 +288,13 @@
 
         const jsonStr = JSON.stringify(payload);
 
-        if (tg && tg.sendData) {
+        if (tg && typeof tg.sendData === 'function') {
           tg.sendData(jsonStr);
-          tg.close();
+          setTimeout(() => {
+            if (tg && tg.close) tg.close();
+          }, 300);
         } else {
-          alert('Data pemotongan sedia dihantar!');
-          console.log(payload);
+          alert('Amaran: Telegram Web App sendData tidak dapat dihubungkan ke bot.');
           btn.disabled = false;
           btn.innerText = '⚡ Terjemah Bahagian Ini';
         }
