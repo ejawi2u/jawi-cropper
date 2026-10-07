@@ -237,8 +237,11 @@
         🔤 Rumi ➡️ Jawi
       </button>
       <button type="button" class="mode-btn" id="btn-mode-jawi" onclick="setMode('jawi_rumi')">
-        📜 Jawi ➡️ Rumi
+        📜 Jawi ➡️ Rumi <span style="font-size: 10px; background: #eab308; color: #000; padding: 1px 4px; border-radius: 4px; margin-left: 3px; font-weight: bold;">BETA</span>
       </button>
+    </div>
+    <div id="jawi-beta-hint" style="display: none; font-size: 11px; color: #fbbf24; text-align: center; margin-top: -4px;">
+      ⚠️ OCR Jawi dalam fasa percubaan: Ketepatan bergantung pada kejelasan tulisan & titik.
     </div>
 
     <div class="actions">
@@ -269,6 +272,10 @@
       selectedMode = mode;
       document.getElementById('btn-mode-rumi').classList.toggle('active', mode === 'rumi_jawi');
       document.getElementById('btn-mode-jawi').classList.toggle('active', mode === 'jawi_rumi');
+      const betaHint = document.getElementById('jawi-beta-hint');
+      if (betaHint) {
+        betaHint.style.display = (mode === 'jawi_rumi') ? 'block' : 'none';
+      }
     }
 
     let currentDragMode = 'crop';
