@@ -55,11 +55,39 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
     #image-to-crop {
       max-width: 100%;
       max-height: 100%;
       display: block;
+    }
+    /* Besarkan titik pemotong (handle points) supaya senang ditarik dengan jari pada telefon */
+    .cropper-view-box {
+      outline: 2px solid #38bdf8 !important;
+    }
+    .cropper-line {
+      background-color: #38bdf8 !important;
+    }
+    .cropper-point {
+      width: 16px !important;
+      height: 16px !important;
+      background-color: #38bdf8 !important;
+      opacity: 0.9 !important;
+      border-radius: 50% !important;
+    }
+    .cropper-point.point-se {
+      width: 24px !important;
+      height: 24px !important;
+      background-color: #10b981 !important;
+    }
+    .cropper-point.point-nw,
+    .cropper-point.point-ne,
+    .cropper-point.point-sw {
+      width: 20px !important;
+      height: 20px !important;
     }
     #empty-state {
       position: absolute;
@@ -191,6 +219,9 @@
     if (tg) {
       tg.expand();
       tg.enableClosingConfirmation();
+      if (typeof tg.disableVerticalSwipes === 'function') {
+        tg.disableVerticalSwipes();
+      }
     }
 
     let cropper = null;
@@ -208,22 +239,39 @@
     function initCropper(src) {
       if (cropper) {
         cropper.destroy();
+        cropper = null;
       }
       emptyState.style.display = 'none';
       imageEl.style.display = 'block';
-      imageEl.src = src;
 
-      cropper = new Cropper(imageEl, {
-        viewMode: 1,
-        autoCropArea: 0.8,
-        responsive: true,
-        movable: true,
-        rotatable: true,
-        scalable: true,
-        zoomable: true,
-        touchDragZoom: true,
-        mouseWheelZoom: true,
-      });
+      // Pastikan gambar sudah selesai dimuatkan sebelum Cropper diinisialisasikan
+      imageEl.onload = function() {
+        if (cropper) {
+          cropper.destroy();
+        }
+        cropper = new Cropper(imageEl, {
+          viewMode: 1,
+          dragMode: 'crop',
+          autoCropArea: 0.8,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+          responsive: true,
+          checkCrossOrigin: false,
+          movable: true,
+          rotatable: true,
+          scalable: false,
+          zoomable: true,
+          touchDragZoom: true,
+          mouseWheelZoom: false,
+        });
+      };
+
+      if (imageEl.complete && imageEl.src === src) {
+        imageEl.onload();
+      } else {
+        imageEl.src = src;
+      }
     }
 
     function rotateImage() {
