@@ -72,22 +72,22 @@
       background-color: #38bdf8 !important;
     }
     .cropper-point {
-      width: 16px !important;
-      height: 16px !important;
+      width: 22px !important;
+      height: 22px !important;
       background-color: #38bdf8 !important;
-      opacity: 0.9 !important;
+      opacity: 0.95 !important;
       border-radius: 50% !important;
     }
     .cropper-point.point-se {
-      width: 24px !important;
-      height: 24px !important;
+      width: 28px !important;
+      height: 28px !important;
       background-color: #10b981 !important;
     }
     .cropper-point.point-nw,
     .cropper-point.point-ne,
     .cropper-point.point-sw {
-      width: 20px !important;
-      height: 20px !important;
+      width: 26px !important;
+      height: 26px !important;
     }
     #empty-state {
       position: absolute;
@@ -166,6 +166,34 @@
       font-size: 14px;
       cursor: pointer;
     }
+    .tool-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tool-btn {
+      background: #334155;
+      color: var(--text);
+      border: 1px solid #475569;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .tool-btn:hover, .tool-btn:active {
+      background: #475569;
+    }
+    .tool-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
     input[type="file"] {
       display: none;
     }
@@ -174,10 +202,17 @@
 <body>
 
   <header>
-    <h1>✂️ Pilih Kotak Teks</h1>
-    <label for="file-input" style="font-size: 13px; color: #38bdf8; cursor: pointer; text-decoration: underline;">
-      Tukar Gambar
-    </label>
+    <h1>✂️ Laraskan Kotak</h1>
+    <div class="tool-bar">
+      <button type="button" class="tool-btn" id="btn-drag-crop" onclick="setDragMode('crop')" title="Mod Laraskan Kotak">🔲 Kotak</button>
+      <button type="button" class="tool-btn" id="btn-drag-move" onclick="setDragMode('move')" title="Mod Gerak Gambar">🖐️ Pan</button>
+      <button type="button" class="tool-btn" onclick="zoomImage(0.1)" title="Zoom Masuk">➕</button>
+      <button type="button" class="tool-btn" onclick="zoomImage(-0.1)" title="Zoom Keluar">➖</button>
+      <button type="button" class="tool-btn" onclick="resetView()" title="Tetap Semula">🎯</button>
+      <label for="file-input" style="font-size: 13px; color: #38bdf8; cursor: pointer; text-decoration: underline; margin-left: 4px;">
+        Tukar
+      </label>
+    </div>
     <input type="file" id="file-input" accept="image/*">
   </header>
 
@@ -236,6 +271,32 @@
       document.getElementById('btn-mode-jawi').classList.toggle('active', mode === 'jawi_rumi');
     }
 
+    let currentDragMode = 'crop';
+
+    function setDragMode(mode) {
+      currentDragMode = mode;
+      if (cropper) {
+        cropper.setDragMode(mode);
+      }
+      const btnCrop = document.getElementById('btn-drag-crop');
+      const btnMove = document.getElementById('btn-drag-move');
+      if (btnCrop) btnCrop.classList.toggle('active', mode === 'crop');
+      if (btnMove) btnMove.classList.toggle('active', mode === 'move');
+    }
+
+    function zoomImage(ratio) {
+      if (cropper) {
+        cropper.zoom(ratio);
+      }
+    }
+
+    function resetView() {
+      if (cropper) {
+        cropper.reset();
+        setDragMode('crop');
+      }
+    }
+
     function initCropper(src) {
       if (cropper) {
         cropper.destroy();
@@ -250,8 +311,8 @@
           cropper.destroy();
         }
         cropper = new Cropper(imageEl, {
-          viewMode: 1,
-          dragMode: 'crop',
+          viewMode: 1, // Hadkan kotak dalam sempadan kanvas gambar
+          dragMode: currentDragMode, // 'crop' atau 'move'
           autoCropArea: 0.8,
           cropBoxMovable: true,
           cropBoxResizable: true,
@@ -264,6 +325,20 @@
           zoomable: true,
           touchDragZoom: true,
           mouseWheelZoom: false,
+          minCropBoxWidth: 40,
+          minCropBoxHeight: 25,
+          ready: function() {
+            setDragMode(currentDragMode);
+          }
+        });
+
+        // Halang kotak hilang jika bucu ditarik ke hujung atau jika luar kotak disentuh
+        imageEl.addEventListener('cropstart', function(e) {
+          // Jika dalam mod 'crop' tetapi pengguna sentuh di luar kotak pemotong,
+          // elak bina kotak baharu dari awal yang menyebabkan kotak asal hilang
+          if (e.detail.action === 'crop') {
+            e.preventDefault();
+          }
         });
       };
 
