@@ -267,6 +267,18 @@
         });
       };
 
+      // Tangani ralat jika gambar gagal dimuat turun
+      imageEl.onerror = function() {
+        console.error('Gagal memuat turun gambar:', src);
+        if (cropper) {
+          cropper.destroy();
+          cropper = null;
+        }
+        emptyState.style.display = 'block';
+        imageEl.style.display = 'none';
+        alert('⚠️ Gambar Telegram tidak dapat dimuatkan secara automatik. Sila ketuk skrin untuk memilih gambar dari telefon anda.');
+      };
+
       if (imageEl.complete && imageEl.src === src) {
         imageEl.onload();
       } else {
@@ -299,13 +311,18 @@
 
     // Semak jika ada imej yang dipassing via URL parameter ?img=...
     const urlParams = new URLSearchParams(window.location.search);
-    const imgParam = urlParams.get('img');
+    let imgParam = urlParams.get('img');
     const modeParam = urlParams.get('mode');
     if (modeParam) {
       setMode(modeParam);
     }
     if (imgParam) {
-      initCropper(decodeURIComponent(imgParam));
+      try {
+        imgParam = decodeURIComponent(imgParam);
+      } catch (e) {
+        console.warn('decodeURIComponent error:', e);
+      }
+      initCropper(imgParam);
     }
 
     function submitCrop() {
